@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const repeatLabel = document.getElementById('repeat-label');
     const searchInput = document.getElementById('search-input');
     const searchStatus = document.getElementById('search-status');
-    const taskItems = document.querySelectorAll('.task-item');
     let completedCount = 0;
     let tasksData = [];
     let currentSortCriteria = null;
@@ -46,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleCompletedTasks();
     });
 
-    function addTaskToUI(text, id, dueDateText = '', reminderTimeText = '', repeatText = '', completed = false, starred = false) {
+    function addTaskToUI(text, id, dueDateText = '', reminderTimeText = '', repeatText = '', completed = false, starred = false, note = '') {
         if (document.querySelector(`li[data-id='${id}']`)) {
             return; // Если задача уже существует в DOM, не добавляем ее повторно
         }
@@ -73,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ${additionalInfo}
             </div>
             <svg class="star-icon" viewBox="0 0 24 24" width="24" height="24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="${starred ? '#0078d4' : 'transparent'}" stroke="#0078d4" stroke-width="2"/>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="${starred ? '#0078d4' : 'transparent'}"  stroke="#0078d4" stroke-width="2"/>
             </svg>
         `;
 
@@ -94,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         taskItem.addEventListener('click', function () {
-            openTaskDetails(id, text, dueDateText, reminderTimeText, repeatText);
+            openTaskDetails(id, text, dueDateText, reminderTimeText, repeatText, note);
         });
 
         if (completed) {
@@ -259,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tasksData = data;
             applyCurrentSort();
             data.forEach(task => {
-                addTaskToUI(task.title, task.id, task.due_date_text, task.reminder_time_text, task.repeat_text, task.completed, task.star);
+                addTaskToUI(task.title, task.id, task.due_date_text, task.reminder_time_text, task.repeat_text, task.completed, task.star, task.text);
             });
         })
         .catch(error => {
@@ -267,17 +266,110 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function openTaskDetails(id, title, dueDateText, reminderTimeText, repeatText) {
-        const taskDetails = document.getElementById('task-details');
+    function openTaskDetails(id, title, dueDateText, reminderTimeText, repeatText, note) {
+        let taskDetails = document.getElementById('task-details');
+
+        if (!taskDetails) {
+            taskDetails = document.createElement('div');
+            taskDetails.id = 'task-details';
+            taskDetails.classList.add('side-menu2');
+
+            taskDetails.innerHTML = `
+                <div class="task-header">
+                    <h2 id="task-title" contenteditable="true"></h2>
+                    <svg class="star-icon" viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="transparent" stroke="#0078d4" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div id="task-reminder" class="task-detail">Напоминание</div>
+                <div id="task-due-date" class="task-detail">Дата выполнения</div>
+                <div id="task-repeat" class="task-detail">Повтор</div>
+                <div class="task-detail-divider"></div>
+                <div id="task-note" class="task-detail" contenteditable="true">Добавить заметку</div>
+                <div class="task-detail-divider"></div>
+                <div class="task-details-footer">
+                    <div id="task-created" class="created-info" style="padding-bottom: 30px">Создано: пн, 3 июня</div>
+                </div>
+            `;
+            document.body.appendChild(taskDetails);
+
+            document.getElementById('task-title').addEventListener('blur', function () {
+                updateTaskTitle(id, this.textContent);
+            });
+
+            document.getElementById('task-note').addEventListener('blur', function () {
+                updateTaskNote(id, this.textContent);
+            });
+
+            document.getElementById('task-created').innerHTML = `
+                <div class="created-info">
+                    <i class="fa fa-trash" onclick="deleteTask(${id})"></i>
+                    <span>Создано: ${new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                    <i class="fa fa-edit" onclick="closeTaskDetails()"></i>
+                </div>
+            `;
+        }
+
         document.getElementById('task-title').textContent = title || '123';
         document.getElementById('task-reminder').textContent = reminderTimeText || 'Напоминание';
         document.getElementById('task-due-date').textContent = dueDateText || 'Дата выполнения';
         document.getElementById('task-repeat').textContent = repeatText || 'Повтор';
-        document.getElementById('task-created').textContent = `Создано: ${new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+        document.getElementById('task-note').textContent = note || 'Добавить заметку';
 
         taskDetails.style.display = 'block';
 
-        document.getElementById('task-title').style.paddingLeft = '10px';
+    }
+
+    function closeTaskDetails() {
+        const taskDetails = document.getElementById('task-details');
+        if (taskDetails) {
+            taskDetails.style.display = 'none';
+        }
+    }
+
+    function updateTaskTitle(id, title) {
+        fetch(`/myapp/update-task/${id}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ title: title })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const taskElement = document.querySelector(`li[data-id='${id}'] .new-task-number`);
+                if (taskElement) {
+                    taskElement.textContent = title;
+                }
+            } else {
+                alert('Ошибка при обновлении задачи: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка запроса:', error);
+        });
+    }
+
+    function updateTaskNote(id, note) {
+        fetch(`/myapp/update-task/${id}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ text: note })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Ошибка при обновлении заметки: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка запроса:', error);
+        });
     }
 
     loadTasks();
@@ -362,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function () {
             margin: 10px 0;
         }
 
-        .fa-trash,{
+        .fa-trash, .fa-edit{
             cursor: pointer;
             margin: 0 10px;
             font-size: 14px; /* Уменьшаем размер шрифта */
@@ -395,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function () {
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            border: 2px solid #0078d4;
+            border: 2px солидный #0078d4;
             display: inline-block;
         }
 
@@ -464,7 +556,6 @@ document.addEventListener('DOMContentLoaded', function () {
         font-size: 12px; /* Уменьшаем размер шрифта */
         }
 
-
         .new-task-item .task-circle,
         .new-task-item .star-icon {
             flex-shrink: 0;
@@ -473,43 +564,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.head.appendChild(style);
 
     updateArrow();
-
-    const taskDetails = document.getElementById('task-details');
-    taskDetails.innerHTML = `
-        <div class="task-header">
-            <span class="task-circle"></span>
-            <h2 id="task-title">123</h2>
-            <svg class="star-icon" viewBox="0 0 24 24" width="24" height="24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="transparent" stroke="#0078d4" stroke-width="2"/>
-            </svg>
-        </div>
-        <div id="task-reminder" class="task-detail">Напоминание</div>
-        <div id="task-due-date" class="task-detail">Дата выполнения</div>
-        <div id="task-repeat" class="task-detail">Повтор</div>
-        <div class="task-detail-divider"></div>
-        <div id="task-category" class="task-detail">Выберите категорию</div>
-        <div id="task-file" class="task-detail">Добавить файл</div>
-        <div class="task-detail-divider"></div>
-        <div id="task-note" class="task-detail">Добавить заметку</div>
-        <div class="task-detail-divider"></div>
-        <div class="task-details-footer">
-            <i class="fa fa-trash"></i>
-            <div id="task-created" class="created-info" style="padding-bottom: 30px">Создано: пн, 3 июня</div>
-        </div>
-    `;
-
-    document.getElementById('task-created').innerHTML = `
-        <div class="created-info">
-            <i class="fa fa-trash"></i>
-            <span>Создано: ${new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-        </div>
-    `;
-
-    function closeTaskDetails() {
-        if (taskDetails) {
-            taskDetails.style.display = 'none';
-        }
-    }
 
     document.querySelector('.clear-icon').addEventListener('click', function () {
         searchInput.value = '';
@@ -547,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const sortButtonRect = sortButton.getBoundingClientRect();
         const sortMenuRect = sortMenu.getBoundingClientRect();
         sortMenu.style.top = sortButtonRect.bottom + 'px';
-        sortMenu.style.left = (sortButtonRect.left + (sortButtonRect.width / 2) - (sortMenuRect.width / 2)) + 'px';
+        sortMenu.style.left = (sortButtonRect.left - (sortMenuRect.width - sortButtonRect.width) / 2) + 'px';
     });
 
     document.addEventListener('click', function(event) {
@@ -588,10 +642,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         taskList.innerHTML = '';
         pinnedTasks.forEach(task => {
-            addTaskToUI(task.title, task.id, task.due_date_text, task.reminder_time_text, task.repeat_text, task.completed, task.star);
+            addTaskToUI(task.title, task.id, task.due_date_text, task.reminder_time_text, task.repeat_text, task.completed, task.star, task.text);
         });
         sortedTasks.forEach(task => {
-            addTaskToUI(task.title, task.id, task.due_date_text, task.reminder_time_text, task.repeat_text, task.completed, task.star);
+            addTaskToUI(task.title, task.id, task.due_date_text, task.reminder_time_text, task.repeat_text, task.completed, task.star, task.text);
         });
 
         sortMenu.classList.add('hidden');
@@ -673,29 +727,38 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
     document.head.appendChild(styleSort);
 
+
     function searchTasks() {
         const query = searchInput.value.toLowerCase();
+        console.log('Search query:', query);  // Логирование запроса поиска
         const tasks = document.querySelectorAll('.new-task-item');
-
-        if (query) {
+        let found = false;
+    
+        tasks.forEach(task => {
+            const taskText = task.querySelector('.new-task-number').textContent.toLowerCase();
+            console.log('Task text:', taskText);  // Логирование текста задачи
+            if (taskText.includes(query)) {
+                task.style.setProperty('display', 'flex', 'important');
+                found = true;
+                console.log('Task found:', taskText);  // Логирование найденной задачи
+            } else {
+                task.style.setProperty('display', 'none', 'important');
+                console.log('Task hidden:', taskText);  // Логирование скрытой задачи
+            }
+        });
+    
+        if (query && !found) {
             searchStatus.innerHTML = `Задачи <i class="fa fa-ellipsis-v" id="params-icon" style="margin-left: 10px; cursor: pointer;"></i> <span class="search-query" style="margin-left: 10px;">Поиск по "${query}"</span>`;
-            tasks.forEach(task => {
-                const taskText = task.querySelector('.new-task-number').textContent.toLowerCase();
-                if (taskText.includes(query)) {
-                    task.style.display = 'flex';
-                } else {
-                    task.style.display = 'none';
-                }
-            });
+            console.log('No tasks found for query:', query);  // Логирование случая, когда задачи не найдены
         } else {
             searchStatus.innerHTML = 'Задачи <i class="fa fa-ellipsis-v" id="params-icon" style="margin-left: 10px; cursor: pointer;"></i>';
-            tasks.forEach(task => {
-                task.style.display = 'flex';
-            });
+            console.log('Tasks found for query:', query);  // Логирование случая, когда задачи найдены
         }
     }
-
+    
     searchInput.addEventListener('input', searchTasks);
+    
+    
 
     function saveCurrentSort(criteria) {
         localStorage.setItem('currentSort', criteria);
@@ -722,6 +785,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     applyCurrentSort();
+    
+    document.addEventListener('click', function (event) {
+        if (event.target.classList.contains('fa-trash')) {
+            const taskId = document.querySelector('.new-task-item').dataset.id;
+            deleteTask(taskId);
+        }
+    });
+
     function deleteTask(taskId) {
         fetch(`/myapp/delete-task/${taskId}/`, {
             method: 'DELETE',
@@ -747,33 +818,5 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Ошибка запроса:', error);
         });
     }
-    
-    document.querySelector('.fa-trash').addEventListener('click', function () {
-        const taskId = document.querySelector('.new-task-item').dataset.id;
-        deleteTask(taskId);
-    });
-    
-    taskItems.forEach(task => {
-        task.addEventListener('click', function () {
-            const taskId = task.dataset.id;
-            const isCompleted = task.querySelector('.task-circle').classList.contains('completed');
 
-            // Обновление бокового меню
-            const taskDetails = document.getElementById('task-details');
-            const taskCircle = taskDetails.querySelector('.task-circle');
-            const taskTitle = taskDetails.querySelector('#task-title');
-
-            taskTitle.textContent = task.querySelector('.task-title').textContent;
-            
-            if (isCompleted) {
-                taskCircle.classList.add('completed');
-            } else {
-                taskCircle.classList.remove('completed');
-            }
-
-            taskDetails.style.display = 'block';
-        });
-    });
-
-    
 });

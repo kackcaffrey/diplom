@@ -8,8 +8,11 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     flex-direction: column;
     height: 100vh;
+    overflow-x: hidden;
 }
-
+.new-task-item {
+    display: flex;
+}
 .header {
     display: flex;
     justify-content: space-between;
@@ -35,13 +38,34 @@ body {
     align-items: center;
     width: 500px;
 }
-
+.sort-button{
+    padding-right: 60px;
+}
 #search-input {
     flex-grow: 1;
     padding-right: 30px;
     
 }
-
+.sort-button a:hover {
+    text-decoration: none !important;
+}
+.nav-right .sort-button {
+    text-decoration: none;
+}
+.sort-menu {
+    position: fixed;
+    background-color: #262829;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 1000;
+    left: 0;
+    top: 50px;
+}
+.nav-right .sort-button:hover {
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
 .search-icon {
     position: absolute;
     left: 7px;
@@ -462,16 +486,19 @@ nav ul {
 }
 
 .new-task-item {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    background-color: #262829;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    margin-bottom: 10px;
-    height: 35px;
-    position: relative;
+    width: calc(100% - 60px) !important;
+    margin-right: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px !important;
+    background-color: #262829 !important;
+    border-radius: 5px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+    margin-bottom: 10px !important;
+    height: 35px !important;
+    position: relative !important;
 }
+
 
 .new-task-checkbox {
     margin-right: 10px;
@@ -1024,4 +1051,18 @@ nav ul {
     justify-content: space-between;
     align-items: center;
     width: 100%;
+}
+.new-task-item {
+    width: calc(100% - 20px);
+    margin-right: 20px; /* чтобы задачи не прижимались к правому краю */
+}
+
+/* Уменьшение длины верхнего блока на 20 пикселей */
+.add-task-container {
+    width: calc(100% - 20px);
+}
+
+/* Уменьшение длины верхнего блока на 20 пикселей */
+.add-task {
+    width: calc(100% - 20px);
 }

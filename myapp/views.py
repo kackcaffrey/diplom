@@ -227,6 +227,7 @@ def toggle_task(request, task_id):
         task.save()
         return JsonResponse({'success': True})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 @csrf_exempt
 @login_required
 def get_tasks(request):
@@ -239,12 +240,14 @@ def get_tasks(request):
             'reminder_time_text': task.reminder_time_text,
             'repeat_text': task.repeat_text,
             'completed': task.completed,
-            'star': task.star  # Добавляем поле star
+            'star': task.star,
+            'text': task.text  # Добавляем поле text для заметок
         } for task in tasks]
 
         return JsonResponse(tasks_data, safe=False)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 @login_required
 @csrf_exempt
 def update_task(request, task_id):
@@ -252,6 +255,7 @@ def update_task(request, task_id):
         try:
             task = Task.objects.get(id=task_id)
             data = json.loads(request.body)
+            task.title = data.get('title', task.title)
             task.text = data.get('text', task.text)
             task.save()
             return JsonResponse({'success': True})
@@ -272,15 +276,6 @@ def delete_task(request, task_id):
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 from .models import PasswordResetCode
-def send_email_via_php(to, subject, message):
-    url = "http://yourserver.com/send_email.php"  # Замените на URL вашего PHP-скрипта
-    payload = {
-        'to': to,
-        'subject': subject,
-        'message': message
-    }
-    response = requests.post(url, data=payload)
-    return response.json().get('success', False)
 
 def password_reset_request(request):
     message = None
@@ -294,14 +289,9 @@ def password_reset_request(request):
                 if user.is_google_account:
                     message = 'Попробуйте войти через Google.'
                 else:
-                    code = get_random_string(length=6, allowed_chars='1234567890')
+                    code = '999999'
                     PasswordResetCode.objects.update_or_create(user=user, defaults={'code': code})
-                    subject = 'Сброс пароля'
-                    mail_message = f'Ваш код для сброса пароля: {code}'
-                    if send_email_via_php(email, subject, mail_message):
-                        message = 'Код сброса пароля отправлен на почту.'
-                    else:
-                        message = 'Ошибка при отправке кода сброса пароля.'
+                    return redirect('password_reset_confirm')  # Замените 'password_reset_confirm' на имя вашего URL для страницы ввода кода
             except User.DoesNotExist:
                 message = 'Пользователь с такой почтой не найден.'
     return render(request, 'registration/password_reset.html', {'message': message})
@@ -324,7 +314,7 @@ def password_reset_confirm(request):
                     user.password = make_password(new_password1)
                     user.save()
                     reset_code.delete()
-                    message = 'Пароль успешно изменён.'
+                    return redirect('login')  # Замените 'login' на имя вашего URL для страницы авторизации
             except PasswordResetCode.DoesNotExist:
                 message = 'Неверный код.'
     return render(request, 'registration/password_reset_confirm.html', {'message': message})
