@@ -1,0 +1,63 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Регистрация</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/register.js' %}"></script>
+</head>
+<body>
+    <div id="splash-screen">
+        <img src="{% static 'images/logo.png' %}" alt="App Logo" class="splash-logo">
+        <div class="loader"></div>
+    </div>
+    <div class="background">
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+    <form id="registration-form" class="registration-form" method="post" action="{% url 'register' %}">
+        {% csrf_token %}
+        <h3>Регистрация</h3>
+
+        <label for="name">Логин</label>
+        <input type="text" name="name" placeholder="Логин" id="name" class="registration-input">
+        <div id="username-error" class="error"></div>
+
+        <label for="email">Почта</label>
+        <input type="email" name="email" placeholder="Почта" id="email" class="registration-input">
+        <div id="email-error" class="error"></div>
+
+        <label for="password">Пароль</label>
+        <input type="password" name="password" placeholder="Пароль" id="password" class="registration-input">
+        <div id="password-error" class="error"></div>
+
+        <label for="password-confirm">Повторный пароль</label>
+        <input type="password" name="password-confirm" placeholder="Повторный пароль" id="password-confirm" class="registration-input">
+        
+
+        <button type="submit" class="registration-button">Зарегистрироваться</button>
+        <p class="account-query">У вас есть аккаунт? <a href="{% url 'login' %}">Авторизация</a></p>
+        <div class="social">
+            <div class="go" id="customBtn"><i class="fab fa-google"></i>Google</div>
+        </div>
+        <script type="text/javascript">
+            document.getElementById('customBtn').addEventListener('click', function() {
+                window.location.href = "{% url 'google_login' %}";
+            });
+            document.addEventListener("DOMContentLoaded", function() {
+                setTimeout(function() {
+                    document.getElementById('splash-screen').style.display = 'none';
+                }, 1500); 
+                window.addEventListener('load', function() {
+                    document.getElementById('splash-screen').style.display = 'none';
+                });
+            });
+        </script>
+    </form>
+</body>
+</html>

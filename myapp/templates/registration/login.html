@@ -1,0 +1,59 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Авторизация</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <script src="{% static 'js/auth.js' %}"></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="119541109841-lv2sckeea274dn85qkjpvsvndbdfpcjv.apps.googleusercontent.com">
+</head>
+<body>
+    <div id="splash-screen">
+        <img src="{% static 'images/logo.png' %}" alt="App Logo" class="splash-logo">
+        <div class="loader"></div>
+    </div>
+    <div class="background">
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+    <form method="POST" action="{% url 'login' %}">
+        {% csrf_token %}
+        <h3>Авторизация</h3>
+
+        <label for="username">Логин</label>
+        <input type="text" placeholder="Логин" id="username" name="username">
+        <div id="username-error2" class="error"></div>
+
+        <label for="password">Пароль</label>
+        <input type="password" placeholder="Пароль" id="password" name="password">
+        <div id="password-error2" class="error"></div>
+
+        <button type="submit">Вход</button>
+        <p class="account-query">У вас нет аккаунта? <a href="{% url 'register' %}">Регистрация</a></p>
+        <div class="social">
+            <div class="go" id="customBtn"><i class="fab fa-google"></i>Google</div>
+        </div>
+        <p class="forgot-password"><a href="{% url 'password_reset_request' %}">Забыли пароль?</a></p>
+        <script type="text/javascript">
+            document.getElementById('customBtn').addEventListener('click', function() {
+                window.location.href = "{% url 'google_login' %}";
+            });
+            if (window.location.search.includes('next=')) {
+                window.history.replaceState({}, document.title, "/login/"); }
+            document.addEventListener("DOMContentLoaded", function() {
+                setTimeout(function() {
+                    document.getElementById('splash-screen').style.display = 'none';
+                }, 1500); 
+                window.addEventListener('load', function() {
+                    document.getElementById('splash-screen').style.display = 'none';
+                });
+            });
+        </script>
+    </form>
+</body>
+</html>

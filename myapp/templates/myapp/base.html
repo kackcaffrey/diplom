@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do</title>
+    <link href="{% static 'css/styless.css' %}" rel="stylesheet">
+    <link href="{% static 'css/calendar.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="splash-screen">
+        <img src="{% static 'images/logo.png' %}" alt="App Logo" class="splash-logo">
+        <div class="loader"></div>
+    </div>
+    <div class="header">
+        <div class="header-left">
+            <h1>To Do</h1>
+        </div>
+        <div class="header-center">
+            <i class="fa fa-search search-icon"></i>
+            <input type="text" placeholder="Поиск" id="search-input">
+            <i class="fa fa-times clear-icon" style="display:none;"></i>
+        </div>
+        <div class="header-right">
+            <i class="fa fa-cog" style="padding-top: 3px;" onclick="toggleSettingsMenu()"></i>
+            <div class="profile-icon" onclick="toggleProfileMenu()">{{ user.username }}</div>
+        </div>
+    </div>
+    <div class="main-container">
+        <nav class="nav-container">
+            <ul class="nav-left">
+                <span id="search-status" class="search-status">Задачи <i class="fa fa-ellipsis-v" id="params-icon" style="margin-left: 10px; cursor: pointer;"></i></span>
+            </ul>
+            <ul class="nav-right">
+                <li><a href="#" class="sort-button"><i class="fa fa-sort"></i> Сортировка</a></li>
+            </ul>
+        </nav>
+        <div class="task-container">
+            <div class="add-task-container">
+                <div class="add-task collapsed" id="add-task">
+                    <div class="task-entry">
+                        <div class="plus-icon">
+                            <i class="fa fa-plus"></i>
+                        </div>
+                        <input type="text" placeholder="Добавить задачу" class="task-input-collapsed" id="task-input">
+                    </div>
+                    <div class="task-details">
+                        <div class="task-icons">
+                            <div class="icon-with-label task-date-container">
+                                <i class="fa fa-calendar"></i>
+                                <span id="date-label" class="date-label"></span>
+                            </div>
+                            <div class="icon-with-label reminder-container">
+                                <i class="fa fa-bell"></i>
+                                <span id="time-label" class="time-label"></span>
+                            </div>
+                            <div class="icon-with-label repeat-container">
+                                <i class="fa fa-repeat" id="repeat-icon"></i>
+                                <span id="repeat-label" class="repeat-label"></span>
+                            </div>
+                        </div>
+                        <button class="add-button">Добавить</button>
+                    </div>                                                          
+                </div>
+                <div class="date-picker" style="display:none;">
+                    <div class="date-header">Срок</div>
+                    <a class="date-option" data-date-type="today">Сегодня <span></span></a>
+                    <div class="divider"></div>
+                    <a class="date-option" data-date-type="tomorrow">Завтра <span></span></a>
+                    <div class="divider"></div>
+                    <a class="date-option" data-date-type="nextWeek">Следующая неделя <span></span></a>
+                    <div class="divider"></div>
+                    <a class="date-option" id="choose-date-btn">Выбрать дату</a>
+                    <input type="date" id="custom-date" class="hidden">
+                    <div class="divider"></div>
+                    <button class="date-option delete-date-option" id="delete-date-btn" style="display:none;">Удалить дату выполнения</button>
+                </div>
+                <div class="calendar" id="custom-calendar" style="display:none;"></div>          
+                <div class="reminder-picker" style="display:none;">
+                    <div class="date-header">Напоминание</div>
+                    <a class="time-option" data-time-type="laterToday">Позднее сегодня <span></span></a>
+                    <div class="divider"></div>
+                    <a class="time-option" data-time-type="tomorrow">Завтра <span></span></a>
+                    <div class="divider"></div>
+                    <a class="time-option" data-time-type="nextWeek">Следующая неделя <span></span></a>
+                    <div class="divider"></div>
+                    <a class="time-option" id="choose-time-btn">Выбрать дату и время</a>
+                    <input type="time" id="custom-time" class="hidden">
+                    <div class="divider"></div>
+                    <button class="time-option delete-time-option" id="delete-time-btn" style="display:none;">Удалить напоминание</button>
+                </div>
+                <div class="calendar" id="custom-calendar2" style="display:none;"></div>
+                <div class="repeat-picker" style="display:none;">
+                    <div class="date-header">Повтор</div>
+                    <a class="repeat-option" data-repeat-type="daily">Ежедневно <span></span></a>
+                    <div class="divider"></div>
+                    <a class="repeat-option" data-repeat-type="weekly">Еженедельно <span></span></a>
+                    <div class="divider"></div>
+                    <a class="repeat-option" data-repeat-type="monthly">Ежемесячно <span></span></a>
+                    <div class="divider"></div>
+                    <a class="repeat-option" data-repeat-type="yearly">Ежегодно <span></span></a>
+                    <div class="divider"></div>
+                    <a class="repeat-option" id="choose-repeat-btn">Настроить повтор</a>
+                    <input type="repeat" id="repeat-op" class="hidden">
+                    <div class="divider"></div>
+                    <button class="repeat-option delete-repeat-option" id="delete-repeat-btn" style="display:none;">Удалить повтор</button>
+                </div>
+                <div class="calendar" id="custom-calendar3" style="display:none;"></div>
+            </div>
+            <ul class="new-task-list" id="new-task-list"></ul>
+        </div>
+    <div id="settings-menu" class="side-menu">
+        <h2 style="padding-bottom: 10px;">Параметры</h2>
+        <i class="fa fa-times" onclick="closeSettingsMenu()"></i>
+        <div id="telegram-settings">
+            <input type="text" id="telegram-nick-input" placeholder="Введите Telegram ник">
+            <button id="save-telegram-username">Сохранить</button>
+        </div>
+    </div>
+    <div id="profile-menu" class="side-menu">
+        <p style="text-align: center;">Логин: {{ user.username }}</p>
+        <button onclick=window.location.href='{% url 'change_password' %}' class="profile-button">Сменить пароль</button>
+        <button onclick="logout()" class="profile-button">Выйти</button>
+    </div>
+    <script src="{% static 'js/menu.js' %}"></script>
+    <script src="{% static 'js/calendar.js' %}"></script>
+    <script src="{% static 'js/napom.js' %}"></script>
+    <script src="{% static 'js/povtor.js' %}"></script>
+    <script src="{% static 'js/sortirovka.js' %}"></script>
+    <script src="{% static 'js/calendarik.js' %}"></script>
+    <script src="{% static 'js/calendarik2.js' %}"></script>
+    <script src="{% static 'js/povtorcontrol.js' %}"></script>
+    <script src="{% static 'js/menuzadach.js' %}"></script>
+    <script src="{% static 'js/parametri.js' %}"></script>
+    <script src="{% static 'js/notifications.js' %}"></script>
+    <script src="{% static 'js/taskDetails.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('splash-screen').style.display = 'flex';
+            setTimeout(function() {
+                document.getElementById('splash-screen').style.display = 'none';
+            }, 1500); 
+            window.addEventListener('load', function() {
+                document.getElementById('splash-screen').style.display = 'none';
+            });
+        });
+        function logout() {
+            fetch('/logout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/login/';
+                } else {
+                    alert('Ошибка при выходе из системы');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка запроса:', error);
+            });
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+            const headerTitle = document.querySelector(".header-left h1");
+            headerTitle.addEventListener("click", function() {
+                window.location.href = window.location.href;  // Перенаправление на текущую страницу
+            });
+        });
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+    function closeTaskDetails() {
+        const taskDetails = document.getElementById('task-details');
+        taskDetails.style.display = 'none';
+    }
+    </script>
+</body>
+</html>
